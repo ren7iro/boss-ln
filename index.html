@@ -35,7 +35,8 @@
             grid-template-columns: 1fr auto; 
             padding: 12px 0;
             font-size: 0.88rem;
-            align-items: center;
+            /* FIXED: Changed from center to flex-start to align the boss name to the top line */
+            align-items: flex-start;
         }
 
         .group-separator { 
@@ -46,6 +47,8 @@
         .boss-info {
             display: flex;
             align-items: center;
+            /* FIXED: Ensures the boss name text line-height matches the right side precisely */
+            line-height: 1.2; 
         }
 
         .boss-name {
@@ -60,13 +63,13 @@
             align-items: flex-end;
             gap: 2px;
             font-size: 0.88rem;
+            line-height: 1.2;
         }
 
         .right-top {
             font-weight: bold;
         }
 
-        /* FIXED: Smaller text and italicized style for the lower tracking line */
         .right-bottom {
             font-size: 0.70rem;
             font-style: italic;
@@ -74,12 +77,10 @@
             letter-spacing: 0.2px;
         }
 
-        /* Muted slate gray color rule for dead states */
         .color-dead {
             color: #666666;
         }
 
-        /* FIXED: Swapped color from red to clean green for active states */
         .color-alive {
             color: #008000;
         }
@@ -197,7 +198,6 @@
 
             if (diff <= 0) {
                 const elapsedMs = Math.abs(diff);
-                // FIXED: Uses full duration counter string with the green styling hook
                 timeCol.innerHTML = `
                     <span class="right-top color-alive">ALIVE</span>
                     <span class="right-bottom color-alive">${formatFullDuration(elapsedMs)} ago</span>
