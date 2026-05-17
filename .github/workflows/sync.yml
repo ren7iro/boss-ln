@@ -1,15 +1,15 @@
 name: Sync Boss Data
 on:
   schedule:
-    - cron: '*/30 * * * *' # Runs automatically every 30 minutes
-  workflow_dispatch: # Lets you trigger it manually with a button click
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4 # Upgraded to v4 to fix the warning
 
       - name: Download Data
         run: |
