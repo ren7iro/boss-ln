@@ -100,7 +100,7 @@
 <div id="boss-list">
     <div class="status-container">
         <div class="loader"></div>
-        <div>loading database...</div>
+        <div>fetching direct live updates...</div>
     </div>
 </div>
 
@@ -119,9 +119,12 @@
         isFetching = true;
 
         try {
-            // FIX: Removed the "./" prefix and fixed the pathing string
-            const res = await fetch("boss_spawn.json?t=" + Date.now());
-            if (!res.ok) throw new Error('File read failed');
+            const target = "https://laghaimnew.com/MAIN_/cache/boss_spawn.json";
+            // Bypassing HostGator's firewall using a client-side cors mirror
+            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(target)}?t=${Date.now()}`;
+
+            const res = await fetch(proxyUrl);
+            if (!res.ok) throw new Error('Proxy reject');
             
             const data = await res.json();
             
@@ -134,22 +137,8 @@
             isFetching = false;
         } catch (e) {
             isFetching = false;
-            console.error("Database read error:", e);
-            // Fallback: Attempt an absolute lookup path if relative pathing acts up
-            try {
-                const fallbackRes = await fetch("/boss-ln/boss_spawn.json?t=" + Date.now());
-                if (fallbackRes.ok) {
-                    const fallbackData = await fallbackRes.json();
-                    bossData = Object.values(fallbackData).sort((a, b) => {
-                        const gA = getMapGroup(a.bossname), gB = getMapGroup(b.bossname);
-                        return gA !== gB ? (gA === "Other" ? 1 : gB === "Other" ? -1 : gA.localeCompare(gB)) : a.bossname.localeCompare(b.bossname);
-                    });
-                    renderList();
-                }
-            } catch(err) {
-                console.log("Retrying database check...");
-            }
-            setTimeout(fetchBossData, 4000); 
+            console.error("Direct fetch failed. Retrying...");
+            setTimeout(fetchBossData, 5000); 
         }
     }
 
@@ -213,7 +202,8 @@
     }
 
     fetchBossData();
-    setInterval(fetchBossData, 60000); 
+    // Keeps the list fully updated without crashing
+    setInterval(fetchBossData, 30000); 
     setInterval(renderList, 1000);
 
     document.addEventListener("visibilitychange", () => {
