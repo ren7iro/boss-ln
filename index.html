@@ -12,13 +12,14 @@
             user-select: none;
             -webkit-tap-highlight-color: transparent;
             background-color: #fff;
+            color: #222;
         }
 
         .header-row {
             display: grid;
             grid-template-columns: 1fr auto; 
             padding: 10px 0;
-            border-bottom: 2px solid #000;
+            border-bottom: 2px solid #222;
             font-weight: bold;
             text-transform: uppercase;
             font-size: 0.75rem;
@@ -26,13 +27,14 @@
             top: 0;
             background: #fff;
             z-index: 100;
+            letter-spacing: 0.5px;
         }
 
         .row {
             display: grid;
             grid-template-columns: 1fr auto; 
             padding: 12px 0;
-            font-size: 0.85rem;
+            font-size: 0.88rem;
             align-items: center;
         }
 
@@ -44,7 +46,7 @@
         .boss-info {
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            gap: 3px;
         }
 
         .boss-name {
@@ -52,17 +54,19 @@
         }
 
         .boss-meta {
-            font-size: 0.72rem;
+            font-size: 0.75rem;
             text-transform: uppercase;
+            letter-spacing: 0.2px;
         }
 
-        .meta-dead {
-            color: #666;
+        /* Unified slate gray color rule for dead states */
+        .color-dead {
+            color: #666666;
         }
 
-        .meta-alive {
-            color: #008000;
-            font-weight: 500;
+        /* Unified deep crimson color rule for alive states */
+        .color-alive {
+            color: #d32f2f;
         }
 
         .col-time { 
@@ -71,30 +75,18 @@
             display: flex;
             justify-content: flex-end;
             align-items: center;
+            font-size: 0.88rem;
         }
 
-        .countdown-text { 
-            font-family: "Courier New", Courier, monospace;
-            font-weight: bold;
-            font-style: italic; 
-            background-color: #f0f0f0;
-            padding: 4px 8px;
-            border-radius: 4px;
-            color: #333;
-            display: inline-block;
-            font-size: 0.85rem;
-            letter-spacing: -0.5px;
+        /* Clean matching fonts for right-side layouts without boxes */
+        .right-countdown {
+            font-weight: 500;
         }
 
-        .spawned { 
-            color: #ff0000; 
+        .right-alive { 
             font-weight: bold; 
             text-transform: uppercase;
-            font-size: 0.85rem;
-            background-color: #ffe6e6;
-            padding: 4px 10px;
-            border-radius: 4px;
-            border: 1px solid #ffb3b3;
+            letter-spacing: 0.5px;
         }
 
         .status-container {
@@ -143,7 +135,6 @@
         return match ? match[1] : "Other";
     }
 
-    // Handles full countdown string with seconds for dead items
     function formatFullDuration(ms) {
         const h = Math.floor(ms / 3600000);
         const m = Math.floor((ms % 3600000) / 60000);
@@ -151,7 +142,6 @@
         return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
     }
 
-    // FIXED: Formats elapsed time using ONLY hours and minutes (xx:xx)
     function formatShortDuration(ms) {
         const h = Math.floor(ms / 3600000);
         const m = Math.floor((ms % 3600000) / 60000);
@@ -214,29 +204,26 @@
             infoCol.appendChild(nameDiv);
 
             const metaDiv = document.createElement('div');
-            metaDiv.className = 'boss-meta';
             
             const timeStr = `${String(targetTime.getHours()).padStart(2, '0')}:${String(targetTime.getMinutes()).padStart(2, '0')}`;
             
-            if (diff <= 0) {
-                const elapsedMs = Math.abs(diff);
-                metaDiv.className = 'boss-meta meta-alive';
-                // FIXED: Now calls the truncated short duration formatting method (no seconds)
-                metaDiv.textContent = `Born ${formatShortDuration(elapsedMs)} ago`;
-            } else {
-                metaDiv.className = 'boss-meta meta-dead';
-                metaDiv.textContent = `Next Spawn: ${timeStr}`;
-            }
-            infoCol.appendChild(metaDiv);
-
             const timeCol = document.createElement('div');
             timeCol.className = 'col-time';
-            
+
             if (diff <= 0) {
-                timeCol.innerHTML = `<span class="spawned">ALIVE</span>`;
+                const elapsedMs = Math.abs(diff);
+                metaDiv.className = 'boss-meta color-alive';
+                // Clean tracking format option used here
+                metaDiv.textContent = `Alive: ${formatShortDuration(elapsedMs)}`;
+                
+                timeCol.innerHTML = `<span class="right-alive color-alive">ALIVE</span>`;
             } else {
-                timeCol.innerHTML = `<span class="countdown-text">${formatFullDuration(diff)}</span>`;
+                metaDiv.className = 'boss-meta color-dead';
+                metaDiv.textContent = `Next Spawn: ${timeStr}`;
+                
+                timeCol.innerHTML = `<span class="right-countdown color-dead">${formatFullDuration(diff)}</span>`;
             }
+            infoCol.appendChild(metaDiv);
 
             row.appendChild(infoCol);
             row.appendChild(timeCol);
