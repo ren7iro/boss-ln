@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boss Time 1.5</title>
+    <title>Boss Time 1.6</title>
     <style>
         body {
             margin: 0;
@@ -80,7 +80,6 @@
             cursor: pointer;
         }
 
-        /* Smaller Section Header Styles */
         .group-header {
             background-color: #f7f7f7;
             padding: 4px 8px;
@@ -167,7 +166,7 @@
 <body>
 
 <div class="header-row">
-    <div>boss time</div>
+    <div>boss name</div>
     <div style="position: relative;">
         <button class="menu-btn" id="menu-toggle-btn">Menu</button>
         <div class="menu-dropdown" id="menu-dropdown">
@@ -185,10 +184,21 @@
 
 <script>
     const CLOUDFLARE_WORKER_URL = "https://laghaim-proxy.launkk.workers.dev";
+    const STORAGE_KEY = "lhn_boss_section_visibility_v1";
 
     let bossData = []; 
     let isFetching = false;
-    const sectionVisibility = {};
+
+    // Load saved preferences from localStorage if available
+    let sectionVisibility = {};
+    try {
+        const savedPrefs = localStorage.getItem(STORAGE_KEY);
+        if (savedPrefs) {
+            sectionVisibility = JSON.parse(savedPrefs);
+        }
+    } catch (e) {
+        console.error("Failed to load saved visibility preferences", e);
+    }
 
     const mapNames = {
         "13": "turan",
@@ -296,7 +306,6 @@
             if (!activeGroups.includes(g)) activeGroups.push(g);
         });
 
-        // Sort active groups according to mapOrder
         activeGroups.sort((a, b) => {
             let iA = mapOrder.indexOf(a);
             let iB = mapOrder.indexOf(b);
@@ -305,7 +314,7 @@
 
         activeGroups.forEach(g => {
             if (sectionVisibility[g] === undefined) {
-                sectionVisibility[g] = true;
+                sectionVisibility[g] = true; // Default to checked
             }
         });
 
@@ -325,6 +334,14 @@
 
     function toggleSection(group, isVisible) {
         sectionVisibility[group] = isVisible;
+        
+        // Save to browser localStorage
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(sectionVisibility));
+        } catch (e) {
+            console.error("Failed to save visibility preferences", e);
+        }
+
         renderList();
     }
 
