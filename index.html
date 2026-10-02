@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boss Time 1.6</title>
+    <title>Boss Time 1.7</title>
     <style>
         body {
             margin: 0;
@@ -99,7 +99,7 @@
             padding: 12px 4px;
             font-size: 0.88rem;
             align-items: flex-start;
-            border-bottom: 1px solid #f9f9f9;
+            border-bottom: none; /* Removed the line/border at the bottom of each boss row */
         }
 
         .boss-info {
@@ -167,7 +167,8 @@
 
 <div class="header-row">
     <div>boss name</div>
-    <div style="position: relative;">
+    <div style="position: relative; display: flex; align-items: center;">
+        <span style="font-size: 0.75rem; font-weight: bold; text-transform: uppercase; margin-right: 8px;">boss time</span>
         <button class="menu-btn" id="menu-toggle-btn">Menu</button>
         <div class="menu-dropdown" id="menu-dropdown">
             <!-- Checkboxes injected dynamically -->
@@ -189,7 +190,6 @@
     let bossData = []; 
     let isFetching = false;
 
-    // Load saved preferences from localStorage if available
     let sectionVisibility = {};
     try {
         const savedPrefs = localStorage.getItem(STORAGE_KEY);
@@ -314,7 +314,7 @@
 
         activeGroups.forEach(g => {
             if (sectionVisibility[g] === undefined) {
-                sectionVisibility[g] = true; // Default to checked
+                sectionVisibility[g] = true;
             }
         });
 
@@ -335,7 +335,6 @@
     function toggleSection(group, isVisible) {
         sectionVisibility[group] = isVisible;
         
-        // Save to browser localStorage
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(sectionVisibility));
         } catch (e) {
