@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boss Time 1.3</title>
+    <title>Boss Time 1.4</title>
     <style>
         body {
             margin: 0;
@@ -28,39 +28,71 @@
             background: #fff;
             z-index: 100;
             letter-spacing: 0.5px;
+            align-items: center;
         }
 
-        .group-header {
+        /* Menu Button Styles */
+        .menu-btn {
+            background: #222;
+            color: #fff;
+            border: none;
+            padding: 4px 8px;
+            font-size: 0.70rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            border-radius: 3px;
+            letter-spacing: 0.5px;
+        }
+
+        .menu-btn:hover {
+            background: #444;
+        }
+
+        /* Dropdown Menu Modal */
+        .menu-dropdown {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 35px;
+            background: #fff;
+            border: 1px solid #ccc;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            padding: 10px;
+            z-index: 1000;
+            width: 180px;
+            border-radius: 4px;
+        }
+
+        .menu-dropdown.active {
+            display: block;
+        }
+
+        .menu-dropdown label {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            font-size: 0.75rem;
+            padding: 4px 0;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        .menu-dropdown input {
+            margin-right: 8px;
+            cursor: pointer;
+        }
+
+        /* Group Header Styles (Non-collapsible now) */
+        .group-header {
             background-color: #f4f4f4;
-            padding: 8px 12px;
+            padding: 6px 12px;
             font-weight: bold;
             font-size: 0.8rem;
             text-transform: uppercase;
-            cursor: pointer;
             border-top: 1px solid #ddd;
             border-bottom: 1px solid #ddd;
             margin-top: 10px;
             letter-spacing: 0.5px;
-        }
-
-        .group-header:hover {
-            background-color: #eaeaea;
-        }
-
-        .group-toggle-icon {
-            font-size: 0.75rem;
-            transition: transform 0.2s ease;
-        }
-
-        .group-content {
-            display: block; 
-        }
-
-        .group-content.collapsed {
-            display: none;
         }
 
         .row {
@@ -137,7 +169,12 @@
 
 <div class="header-row">
     <div>boss name</div>
-    <div>status</div>
+    <div style="position: relative;">
+        <button class="menu-btn" id="menu-toggle-btn">Menu</button>
+        <div class="menu-dropdown" id="menu-dropdown">
+            <!-- Checkboxes injected dynamically -->
+        </div>
+    </div>
 </div>
 
 <div id="boss-list">
@@ -152,7 +189,9 @@
 
     let bossData = []; 
     let isFetching = false;
-    const collapsedSections = {};
+    
+    // Visibility state per map group (true = visible, false = hidden)
+    const sectionVisibility = {};
 
     const mapNames = {
         "13": "turan",
@@ -171,6 +210,23 @@
     };
 
     const mapOrder = ["13", "19", "26", "20", "22", "23", "24", "21", "25", "27", "30", "31", "32"];
+
+    // Setup menu toggle behavior
+    const menuBtn = document.getElementById('menu-toggle-btn');
+    const menuDropdown = document.getElementById('menu-dropdown');
+
+    menuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        menuDropdown.classList.toggle('active');
+    });
+
+    document.addEventListener('click', () => {
+        menuDropdown.classList.remove('active');
+    });
+
+    menuDropdown.addEventListener('click', (e) => {
+        e.stopPropagation();
+    });
 
     function getMapGroup(name) {
         const match = name.match(/^\[(\d{2})\]/);
@@ -204,12 +260,10 @@
                 if (indexA === -1) indexA = 999;
                 if (indexB === -1) indexB = 999;
 
-                // 1. Sort by map order first
                 if (indexA !== indexB) {
                     return indexA - indexB;
                 }
 
-                // Within the same map section:
                 const timeA = new Date(a.bosstime + "-03:00");
                 const timeB = new Date(b.bosstime + "-03:00");
                 const diffA = timeA - now;
@@ -218,19 +272,17 @@
                 const isAliveA = diffA <= 0;
                 const isAliveB = diffB <= 0;
 
-                // 2. Alive bosses come before dead/upcoming bosses
                 if (isAliveA && !isAliveB) return -1;
                 if (!isAliveA && isAliveB) return 1;
 
-                // 3. If both are alive, sort by longest alive first (smallest timestamp / largest negative diff)
                 if (isAliveA && isAliveB) {
-                    return diffA - diffB; // diffA is negative, more negative means alive longer
+                    return diffA - diffB;
                 }
 
-                // 4. If both are dead/upcoming, sort by which spawns sooner (smallest positive diff)
                 return diffA - diffB;
             });
             
+            updateMenuCheckboxes();
             renderList();
             isFetching = false;
         } catch (e) {
@@ -238,6 +290,41 @@
             console.error("Sync interface error, retrying...", e);
             setTimeout(fetchBossData, 5000); 
         }
+    }
+
+    function updateMenuCheckboxes() {
+        // Collect all distinct groups present in data
+        const activeGroups = [];
+        bossData.forEach(boss => {
+            const g = getMapGroup(boss.bossname);
+            if (!activeGroups.includes(g)) activeGroups.push(g);
+        });
+
+        // Initialize visibility states default to true
+        activeGroups.forEach(g => {
+            if (sectionVisibility[g] === undefined) {
+                sectionVisibility[g] = true;
+            }
+        });
+
+        // Build menu HTML content
+        let html = '';
+        activeGroups.forEach(g => {
+            const labelName = mapNames[g] ? mapNames[g] : g;
+            const isChecked = sectionVisibility[g] ? 'checked' : '';
+            html += `
+                <label>
+                    <input type="checkbox" data-group="${g}" ${isChecked} onchange="toggleSection('${g}', this.checked)">
+                    ${labelName}
+                </label>
+            `;
+        });
+        menuDropdown.innerHTML = html;
+    }
+
+    function toggleSection(group, isVisible) {
+        sectionVisibility[group] = isVisible;
+        renderList();
     }
 
     function renderList() {
@@ -248,38 +335,25 @@
         const fragment = document.createDocumentFragment();
         
         let lastGroup = null;
-        let currentGroupContainer = null;
 
         bossData.forEach((boss) => {
             const currentGroup = getMapGroup(boss.bossname);
 
+            // Skip if user hid this section from menu
+            if (sectionVisibility[currentGroup] === false) {
+                return;
+            }
+
             if (currentGroup !== lastGroup) {
                 lastGroup = currentGroup;
-
-                if (collapsedSections[currentGroup] === undefined) {
-                    collapsedSections[currentGroup] = false;
-                }
 
                 const mapLabel = mapNames[currentGroup] ? `map: ${mapNames[currentGroup]}` : `map: ${currentGroup}`;
 
                 const header = document.createElement('div');
                 header.className = 'group-header';
-                header.innerHTML = `
-                    <span>${mapLabel}</span>
-                    <span class="group-toggle-icon">${collapsedSections[currentGroup] ? '▼ Show' : '▲ Hide'}</span>
-                `;
-
-                currentGroupContainer = document.createElement('div');
-                currentGroupContainer.className = 'group-content' + (collapsedSections[currentGroup] ? ' collapsed' : '');
-
-                header.addEventListener('click', () => {
-                    collapsedSections[currentGroup] = !collapsedSections[currentGroup];
-                    currentGroupContainer.classList.toggle('collapsed', collapsedSections[currentGroup]);
-                    header.querySelector('.group-toggle-icon').textContent = collapsedSections[currentGroup] ? '▼ Show' : '▲ Hide';
-                });
+                header.textContent = mapLabel;
 
                 fragment.appendChild(header);
-                fragment.appendChild(currentGroupContainer);
             }
 
             const targetTime = new Date(boss.bosstime + "-03:00");
@@ -315,10 +389,7 @@
 
             row.appendChild(infoCol);
             row.appendChild(timeCol);
-            
-            if (currentGroupContainer) {
-                currentGroupContainer.appendChild(row);
-            }
+            fragment.appendChild(row);
         });
 
         container.innerHTML = '';
