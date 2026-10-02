@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boss Time 1.4</title>
+    <title>Boss Time 1.5</title>
     <style>
         body {
             margin: 0;
@@ -31,7 +31,6 @@
             align-items: center;
         }
 
-        /* Menu Button Styles */
         .menu-btn {
             background: #222;
             color: #fff;
@@ -49,7 +48,6 @@
             background: #444;
         }
 
-        /* Dropdown Menu Modal */
         .menu-dropdown {
             display: none;
             position: absolute;
@@ -82,17 +80,18 @@
             cursor: pointer;
         }
 
-        /* Group Header Styles (Non-collapsible now) */
+        /* Smaller Section Header Styles */
         .group-header {
-            background-color: #f4f4f4;
-            padding: 6px 12px;
+            background-color: #f7f7f7;
+            padding: 4px 8px;
             font-weight: bold;
-            font-size: 0.8rem;
+            font-size: 0.70rem;
             text-transform: uppercase;
-            border-top: 1px solid #ddd;
-            border-bottom: 1px solid #ddd;
-            margin-top: 10px;
+            border-top: 1px solid #eaeaea;
+            border-bottom: 1px solid #eaeaea;
+            margin-top: 8px;
             letter-spacing: 0.5px;
+            color: #555;
         }
 
         .row {
@@ -189,8 +188,6 @@
 
     let bossData = []; 
     let isFetching = false;
-    
-    // Visibility state per map group (true = visible, false = hidden)
     const sectionVisibility = {};
 
     const mapNames = {
@@ -206,12 +203,12 @@
         "27": "venatus",
         "30": "saara",
         "31": "chaotic sky",
-        "32": "frostgard"
+        "32": "frostgard",
+        "Other": "laglamia"
     };
 
-    const mapOrder = ["13", "19", "26", "20", "22", "23", "24", "21", "25", "27", "30", "31", "32"];
+    const mapOrder = ["13", "19", "26", "20", "22", "23", "24", "21", "25", "27", "30", "31", "32", "Other"];
 
-    // Setup menu toggle behavior
     const menuBtn = document.getElementById('menu-toggle-btn');
     const menuDropdown = document.getElementById('menu-dropdown');
 
@@ -293,21 +290,25 @@
     }
 
     function updateMenuCheckboxes() {
-        // Collect all distinct groups present in data
         const activeGroups = [];
         bossData.forEach(boss => {
             const g = getMapGroup(boss.bossname);
             if (!activeGroups.includes(g)) activeGroups.push(g);
         });
 
-        // Initialize visibility states default to true
+        // Sort active groups according to mapOrder
+        activeGroups.sort((a, b) => {
+            let iA = mapOrder.indexOf(a);
+            let iB = mapOrder.indexOf(b);
+            return (iA === -1 ? 999 : iA) - (iB === -1 ? 999 : iB);
+        });
+
         activeGroups.forEach(g => {
             if (sectionVisibility[g] === undefined) {
                 sectionVisibility[g] = true;
             }
         });
 
-        // Build menu HTML content
         let html = '';
         activeGroups.forEach(g => {
             const labelName = mapNames[g] ? mapNames[g] : g;
@@ -339,7 +340,6 @@
         bossData.forEach((boss) => {
             const currentGroup = getMapGroup(boss.bossname);
 
-            // Skip if user hid this section from menu
             if (sectionVisibility[currentGroup] === false) {
                 return;
             }
@@ -347,7 +347,7 @@
             if (currentGroup !== lastGroup) {
                 lastGroup = currentGroup;
 
-                const mapLabel = mapNames[currentGroup] ? `map: ${mapNames[currentGroup]}` : `map: ${currentGroup}`;
+                const mapLabel = mapNames[currentGroup] ? `${mapNames[currentGroup]}:` : `${currentGroup}:`;
 
                 const header = document.createElement('div');
                 header.className = 'group-header';
