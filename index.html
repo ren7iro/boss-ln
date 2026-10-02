@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>boss time 1.0</title>
+    <title>Boss Time 1.1</title>
     <style>
         body {
             margin: 0;
@@ -57,7 +57,7 @@
         }
 
         .group-content {
-            display: block; /* Toggled via JS */
+            display: block; 
         }
 
         .group-content.collapsed {
@@ -153,9 +153,26 @@
 
     let bossData = []; 
     let isFetching = false;
-    
-    // Store collapsed states for sections so they persist across data refreshes
     const collapsedSections = {};
+
+    // Custom map naming and explicit sorting order mapping
+    const mapNames = {
+        "13": "turan",
+        "19": "mobius",
+        "26": "tritian",
+        "20": "forlorn s1",
+        "22": "forlorn s2",
+        "23": "forlorn s3",
+        "24": "forlorn s4",
+        "21": "kruma",
+        "25": "highland",
+        "27": "venatus",
+        "30": "saara",
+        "31": "chaotic sky",
+        "32": "frostgard"
+    };
+
+    const mapOrder = ["13", "19", "26", "20", "22", "23", "24", "21", "25", "27", "30", "31", "32"];
 
     function getMapGroup(name) {
         const match = name.match(/^\[(\d{2})\]/);
@@ -181,7 +198,17 @@
             
             bossData = Object.values(data).sort((a, b) => {
                 const gA = getMapGroup(a.bossname), gB = getMapGroup(b.bossname);
-                return gA !== gB ? (gA === "Other" ? 1 : gB === "Other" ? -1 : gA.localeCompare(gB)) : a.bossname.localeCompare(b.bossname);
+                
+                let indexA = mapOrder.indexOf(gA);
+                let indexB = mapOrder.indexOf(gB);
+                
+                if (indexA === -1) indexA = 999;
+                if (indexB === -1) indexB = 999;
+
+                if (indexA !== indexB) {
+                    return indexA - indexB;
+                }
+                return a.bossname.localeCompare(b.bossname);
             });
             
             renderList();
@@ -206,26 +233,25 @@
         bossData.forEach((boss) => {
             const currentGroup = getMapGroup(boss.bossname);
 
-            // If it's a new group, create a collapsible header and content wrapper
             if (currentGroup !== lastGroup) {
                 lastGroup = currentGroup;
 
-                // Ensure state exists (default to expanded/false)
                 if (collapsedSections[currentGroup] === undefined) {
                     collapsedSections[currentGroup] = false;
                 }
 
+                const mapLabel = mapNames[currentGroup] ? `map: ${mapNames[currentGroup]}` : `map: ${currentGroup}`;
+
                 const header = document.createElement('div');
                 header.className = 'group-header';
                 header.innerHTML = `
-                    <span>Map / Group: [${currentGroup}]</span>
+                    <span>${mapLabel}</span>
                     <span class="group-toggle-icon">${collapsedSections[currentGroup] ? '▼ Show' : '▲ Hide'}</span>
                 `;
 
                 currentGroupContainer = document.createElement('div');
                 currentGroupContainer.className = 'group-content' + (collapsedSections[currentGroup] ? ' collapsed' : '');
 
-                // Click event to toggle collapse/expand
                 header.addEventListener('click', () => {
                     collapsedSections[currentGroup] = !collapsedSections[currentGroup];
                     currentGroupContainer.classList.toggle('collapsed', collapsedSections[currentGroup]);
@@ -270,7 +296,6 @@
             row.appendChild(infoCol);
             row.appendChild(timeCol);
             
-            // Append row inside the current group container instead of fragment directly
             if (currentGroupContainer) {
                 currentGroupContainer.appendChild(row);
             }
