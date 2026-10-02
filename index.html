@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boss Time | LHN</title>
+    <title>boss time 1.0</title>
     <style>
         body {
             margin: 0;
@@ -30,24 +30,52 @@
             letter-spacing: 0.5px;
         }
 
+        /* Group Header Styles */
+        .group-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #f4f4f4;
+            padding: 8px 12px;
+            font-weight: bold;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            cursor: pointer;
+            border-top: 1px solid #ddd;
+            border-bottom: 1px solid #ddd;
+            margin-top: 10px;
+            letter-spacing: 0.5px;
+        }
+
+        .group-header:hover {
+            background-color: #eaeaea;
+        }
+
+        .group-toggle-icon {
+            font-size: 0.75rem;
+            transition: transform 0.2s ease;
+        }
+
+        .group-content {
+            display: block; /* Toggled via JS */
+        }
+
+        .group-content.collapsed {
+            display: none;
+        }
+
         .row {
             display: grid;
             grid-template-columns: 1fr auto; 
-            padding: 12px 0;
+            padding: 12px 4px;
             font-size: 0.88rem;
-            /* FIXED: Changed from center to flex-start to align the boss name to the top line */
             align-items: flex-start;
-        }
-
-        .group-separator { 
-            border-top: 1px solid #eee; 
-            margin: 8px 0; 
+            border-bottom: 1px solid #f9f9f9;
         }
 
         .boss-info {
             display: flex;
             align-items: center;
-            /* FIXED: Ensures the boss name text line-height matches the right side precisely */
             line-height: 1.2; 
         }
 
@@ -125,6 +153,9 @@
 
     let bossData = []; 
     let isFetching = false;
+    
+    // Store collapsed states for sections so they persist across data refreshes
+    const collapsedSections = {};
 
     function getMapGroup(name) {
         const match = name.match(/^\[(\d{2})\]/);
@@ -168,16 +199,42 @@
 
         const now = new Date();
         const fragment = document.createDocumentFragment();
-        let lastGroup = "";
+        
+        let lastGroup = null;
+        let currentGroupContainer = null;
 
-        bossData.forEach((boss, index) => {
+        bossData.forEach((boss) => {
             const currentGroup = getMapGroup(boss.bossname);
-            if (index > 0 && currentGroup !== lastGroup) {
-                const sep = document.createElement('div');
-                sep.className = 'group-separator';
-                fragment.appendChild(sep);
+
+            // If it's a new group, create a collapsible header and content wrapper
+            if (currentGroup !== lastGroup) {
+                lastGroup = currentGroup;
+
+                // Ensure state exists (default to expanded/false)
+                if (collapsedSections[currentGroup] === undefined) {
+                    collapsedSections[currentGroup] = false;
+                }
+
+                const header = document.createElement('div');
+                header.className = 'group-header';
+                header.innerHTML = `
+                    <span>Map / Group: [${currentGroup}]</span>
+                    <span class="group-toggle-icon">${collapsedSections[currentGroup] ? '▼ Show' : '▲ Hide'}</span>
+                `;
+
+                currentGroupContainer = document.createElement('div');
+                currentGroupContainer.className = 'group-content' + (collapsedSections[currentGroup] ? ' collapsed' : '');
+
+                // Click event to toggle collapse/expand
+                header.addEventListener('click', () => {
+                    collapsedSections[currentGroup] = !collapsedSections[currentGroup];
+                    currentGroupContainer.classList.toggle('collapsed', collapsedSections[currentGroup]);
+                    header.querySelector('.group-toggle-icon').textContent = collapsedSections[currentGroup] ? '▼ Show' : '▲ Hide';
+                });
+
+                fragment.appendChild(header);
+                fragment.appendChild(currentGroupContainer);
             }
-            lastGroup = currentGroup;
 
             const targetTime = new Date(boss.bosstime + "-03:00");
             const diff = targetTime - now;
@@ -212,7 +269,11 @@
 
             row.appendChild(infoCol);
             row.appendChild(timeCol);
-            fragment.appendChild(row);
+            
+            // Append row inside the current group container instead of fragment directly
+            if (currentGroupContainer) {
+                currentGroupContainer.appendChild(row);
+            }
         });
 
         container.innerHTML = '';
