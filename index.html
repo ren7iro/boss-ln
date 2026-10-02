@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boss Time 1.7</title>
+    <title>Boss Time 1.8</title>
     <style>
         body {
             margin: 0;
@@ -99,7 +99,12 @@
             padding: 12px 4px;
             font-size: 0.88rem;
             align-items: flex-start;
-            border-bottom: none; /* Removed the line/border at the bottom of each boss row */
+            border-bottom: 1px solid #f9f9f9;
+        }
+
+        /* Removes the line under the last boss in every section */
+        .row.last-in-group {
+            border-bottom: none;
         }
 
         .boss-info {
@@ -166,9 +171,8 @@
 <body>
 
 <div class="header-row">
-    <div>boss name</div>
-    <div style="position: relative; display: flex; align-items: center;">
-        <span style="font-size: 0.75rem; font-weight: bold; text-transform: uppercase; margin-right: 8px;">boss time</span>
+    <div>boss time</div>
+    <div style="position: relative;">
         <button class="menu-btn" id="menu-toggle-btn">Menu</button>
         <div class="menu-dropdown" id="menu-dropdown">
             <!-- Checkboxes injected dynamically -->
@@ -351,14 +355,14 @@
         const now = new Date();
         const fragment = document.createDocumentFragment();
         
+        // Filter visible bosses first to easily detect the last item of each section
+        const visibleBosses = bossData.filter(boss => sectionVisibility[getMapGroup(boss.bossname)] !== false);
+
         let lastGroup = null;
 
-        bossData.forEach((boss) => {
+        visibleBosses.forEach((boss, index) => {
             const currentGroup = getMapGroup(boss.bossname);
-
-            if (sectionVisibility[currentGroup] === false) {
-                return;
-            }
+            const nextGroup = visibleBosses[index + 1] ? getMapGroup(visibleBosses[index + 1].bossname) : null;
 
             if (currentGroup !== lastGroup) {
                 lastGroup = currentGroup;
@@ -376,7 +380,10 @@
             const diff = targetTime - now;
 
             const row = document.createElement('div');
-            row.className = 'row';
+            
+            // If this is the last boss item before the group changes or list ends, add 'last-in-group' class to drop the line
+            const isLast = currentGroup !== nextGroup;
+            row.className = 'row' + (isLast ? ' last-in-group' : '');
 
             const infoCol = document.createElement('div');
             infoCol.className = 'boss-info';
