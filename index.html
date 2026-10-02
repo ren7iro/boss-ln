@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boss Time 1.2</title>
+    <title>Boss Time 1.3</title>
     <style>
         body {
             margin: 0;
@@ -204,29 +204,30 @@
                 if (indexA === -1) indexA = 999;
                 if (indexB === -1) indexB = 999;
 
-                // 1. Sort by Map Order first
+                // 1. Sort by map order first
                 if (indexA !== indexB) {
                     return indexA - indexB;
                 }
 
-                // 2. Inside the same map, sort by Alive status first
-                const targetA = new Date(a.bosstime + "-03:00");
-                const targetB = new Date(b.bosstime + "-03:00");
-                const diffA = targetA - now;
-                const diffB = targetB - now;
+                // Within the same map section:
+                const timeA = new Date(a.bosstime + "-03:00");
+                const timeB = new Date(b.bosstime + "-03:00");
+                const diffA = timeA - now;
+                const diffB = timeB - now;
 
                 const isAliveA = diffA <= 0;
                 const isAliveB = diffB <= 0;
 
-                if (isAliveA && !isAliveB) return -1; // A is alive, B is dead -> A comes first
-                if (!isAliveA && isAliveB) return 1;  // B is alive, A is dead -> B comes first
+                // 2. Alive bosses come before dead/upcoming bosses
+                if (isAliveA && !isAliveB) return -1;
+                if (!isAliveA && isAliveB) return 1;
 
-                // 3. If both are alive, sort by which one has been alive longer (or reverse if you prefer shorter)
+                // 3. If both are alive, sort by longest alive first (smallest timestamp / largest negative diff)
                 if (isAliveA && isAliveB) {
-                    return diffA - diffB; // Smaller negative diff means more recently alive, or vice versa
+                    return diffA - diffB; // diffA is negative, more negative means alive longer
                 }
 
-                // 4. If both are dead, sort by which one spawns sooner (smaller positive diff)
+                // 4. If both are dead/upcoming, sort by which spawns sooner (smallest positive diff)
                 return diffA - diffB;
             });
             
