@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boss Time 1.1</title>
+    <title>Boss Time 1.2</title>
     <style>
         body {
             margin: 0;
@@ -30,7 +30,6 @@
             letter-spacing: 0.5px;
         }
 
-        /* Group Header Styles */
         .group-header {
             display: flex;
             justify-content: space-between;
@@ -155,7 +154,6 @@
     let isFetching = false;
     const collapsedSections = {};
 
-    // Custom map naming and explicit sorting order mapping
     const mapNames = {
         "13": "turan",
         "19": "mobius",
@@ -195,6 +193,7 @@
             if (!res.ok) throw new Error('Worker communication failure');
             
             const data = await res.json();
+            const now = new Date();
             
             bossData = Object.values(data).sort((a, b) => {
                 const gA = getMapGroup(a.bossname), gB = getMapGroup(b.bossname);
@@ -205,10 +204,30 @@
                 if (indexA === -1) indexA = 999;
                 if (indexB === -1) indexB = 999;
 
+                // 1. Sort by Map Order first
                 if (indexA !== indexB) {
                     return indexA - indexB;
                 }
-                return a.bossname.localeCompare(b.bossname);
+
+                // 2. Inside the same map, sort by Alive status first
+                const targetA = new Date(a.bosstime + "-03:00");
+                const targetB = new Date(b.bosstime + "-03:00");
+                const diffA = targetA - now;
+                const diffB = targetB - now;
+
+                const isAliveA = diffA <= 0;
+                const isAliveB = diffB <= 0;
+
+                if (isAliveA && !isAliveB) return -1; // A is alive, B is dead -> A comes first
+                if (!isAliveA && isAliveB) return 1;  // B is alive, A is dead -> B comes first
+
+                // 3. If both are alive, sort by which one has been alive longer (or reverse if you prefer shorter)
+                if (isAliveA && isAliveB) {
+                    return diffA - diffB; // Smaller negative diff means more recently alive, or vice versa
+                }
+
+                // 4. If both are dead, sort by which one spawns sooner (smaller positive diff)
+                return diffA - diffB;
             });
             
             renderList();
