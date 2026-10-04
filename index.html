@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boss Time 1.8</title>
+    <title>Boss Time | LHN</title>
     <style>
         body {
             margin: 0;
@@ -102,7 +102,6 @@
             border-bottom: 1px solid #f9f9f9;
         }
 
-        /* Removes the line under the last boss in every section */
         .row.last-in-group {
             border-bottom: none;
         }
@@ -240,6 +239,12 @@
     });
 
     function getMapGroup(name) {
+        const lowerName = name.toLowerCase();
+        // Force specific extra bosses into Turan [13] group
+        if (lowerName.includes("snake scorpion") || lowerName.includes("king turan") || lowerName.includes("castle zombie")) {
+            return "13";
+        }
+
         const match = name.match(/^\[(\d{2})\]/);
         return match ? match[1] : "Other";
     }
@@ -355,7 +360,6 @@
         const now = new Date();
         const fragment = document.createDocumentFragment();
         
-        // Filter visible bosses first to easily detect the last item of each section
         const visibleBosses = bossData.filter(boss => sectionVisibility[getMapGroup(boss.bossname)] !== false);
 
         let lastGroup = null;
@@ -381,7 +385,6 @@
 
             const row = document.createElement('div');
             
-            // If this is the last boss item before the group changes or list ends, add 'last-in-group' class to drop the line
             const isLast = currentGroup !== nextGroup;
             row.className = 'row' + (isLast ? ' last-in-group' : '');
 
